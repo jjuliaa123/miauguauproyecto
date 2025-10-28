@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>AdoptaGatos 🐾</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>AdoptaGatos 🐾</h1>
+      <div class="controls">
+        <input class="search" id="q" placeholder="Buscar por nombre, raza o descripción...">
+        <select id="filter">
+          <option value="all">Todos</option>
+          <option value="available">Disponibles</option>
+          <option value="adopted">Adoptados</option>
+        </select>
+        <button id="refresh" class="ghost">Actualizar</button>
+      </div>
+    </header>
+
+    <div class="layout">
+      <main>
+        <div id="message" style="margin-bottom:12px"></div>
+        <div class="cards" id="catsList"></div>
+      </main>
+
+      <aside>
+        <h3>Agregar gato en adopción</h3>
+        <form id="catForm">
+          <label>Nombre <input type="text" id="name" required></label>
+          <label>Edad (años) <input type="number" id="age" min="0" step="0.1"></label>
+          <label>Raza <input type="text" id="breed"></label>
+          <label>Foto (URL) <input type="text" id="image"></label>
+          <label>Descripción <textarea id="desc"></textarea></label>
+          <label>Estado
+            <select id="status">
+              <option value="available">Disponible</option>
+              <option value="adopted">Adoptado</option>
+            </select>
+          </label>
+          <div style="display:flex;gap:8px;margin-top:6px">
+            <button type="submit">Publicar</button>
+            <button type="button" id="clear" class="secondary">Limpiar</button>
+          </div>
+        </form>
+      </aside>
+    </div>
+  </div>
+
+  <script src="main.js"></script>
+</body>
+</html>
