@@ -7,6 +7,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 import fs from "fs";
 
+
 dotenv.config();
 
 const __filename = fileURLToPath(import.meta.url);
@@ -28,6 +29,12 @@ const storage = multer.diskStorage({
 const upload = multer({ storage });
 
 // Servir frontend y uploads
+
+// Página de inicio
+app.get("/", (req, res) => {
+  res.sendFile(path.join(__dirname, "../frontend/home.html"));
+});
+
 app.use(express.static(path.join(__dirname, "../frontend")));
 app.use("/uploads", express.static(UPLOAD_DIR));
 
