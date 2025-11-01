@@ -35,15 +35,16 @@ app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "../frontend/home.html"));
 });
 
-// 🐱 Pool de MySQL
+// Pool de MySQL (usa las credenciales de Railway en .env)
 const db = mysql.createPool({
   host: process.env.DB_HOST,
   user: process.env.DB_USER,
   password: process.env.DB_PASS,
   database: process.env.DB_NAME,
+  port: process.env.DB_PORT || 3306,
   waitForConnections: true,
   connectionLimit: 10,
-  queueLimit: 0
+  queueLimit: 0,
 });
 
 db.getConnection((err, connection) => {
@@ -93,7 +94,7 @@ app.delete("/api/cats/:id", (req, res) => {
   });
 });
 
-// 🚀 Iniciar servidor
+// 🚀 Iniciar servidor (Railway asigna el puerto automáticamente)
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`🚀 Servidor corriendo en http://localhost:${PORT}`);
