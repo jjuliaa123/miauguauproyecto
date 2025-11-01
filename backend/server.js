@@ -27,38 +27,43 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage });
 
-// Servir frontend y uploads
-app.use(express.static(path.join(__dirname, "../frontend")));
-app.use("/uploads", express.static(UPLOAD_DIR));
-
-app.get("/", (req, res) => {
-  res.sendFile(path.join(__dirname, "../frontend/home.html"));
+// 🐱 Conexión MySQL (Render usa variables de entorno si querés conectar una DB externa)
+const db = mysql.createConnection({
+  host: process.env.DB_HOST || "localhost",
+  user: process.env.DB_USER || "root",
+  password: process.env.DB_PASS || "",
+  database: process.env.DB_NAME || "miauguau",
 });
 
-// Pool de MySQL (usa las credenciales de Railway en .env)
-const db = mysql.createPool({
-  host: process.env.DB_HOST,
-  user: process.env.DB_USER,
-  password: process.env.DB_PASS,
-  database: process.env.DB_NAME,
-  port: process.env.DB_PORT || 3306,
-  waitForConnections: true,
-  connectionLimit: 10,
-  queueLimit: 0,
-});
+let dbConnected = false;
 
-db.getConnection((err, connection) => {
-  if (err) console.error("❌ Error al conectar a MySQL:", err.message);
-  else {
+db.connect((err) => {
+  if (err) {
+    console.error("❌ Error al conectar a MySQL:", err.message);
+    dbConnected = false;
+  } else {
     console.log("✅ Conectado a MySQL correctamente");
-    connection.release();
+    dbConnected = true;
   }
 });
 
-// --- Rutas ---
+// --- Rutas API (deben ir ANTES de los archivos estáticos) ---
+// Ruta de health check
+app.get("/api/health", (req, res) => {
+  res.json({ 
+    status: "ok", 
+    database: dbConnected ? "connected" : "disconnected",
+    message: dbConnected ? "Base de datos conectada" : "Base de datos desconectada"
+  });
+});
+
 app.get("/api/cats", (req, res) => {
   db.query("SELECT * FROM cats", (err, result) => {
-    if (err) return res.status(500).json({ error: err.message });
+    if (err) {
+      console.error("❌ Error en GET /api/cats:", err.message);
+      return res.status(500).json({ error: err.message });
+    }
+    console.log(`✅ GET /api/cats - Retornando ${result.length} gatos`);
     res.json(result);
   });
 });
@@ -67,11 +72,17 @@ app.post("/api/cats", upload.single("imageFile"), (req, res) => {
   const { name, age, breed, description, status } = req.body;
   const image = req.file ? `/uploads/${req.file.filename}` : "";
 
+  console.log("📝 POST /api/cats - Nuevo gato:", { name, age, breed, status });
+
   db.query(
     "INSERT INTO cats (name, age, breed, image, description, status) VALUES (?, ?, ?, ?, ?, ?)",
     [name, age, breed, image, description, status],
     (err, result) => {
-      if (err) return res.status(500).json({ error: err.message });
+      if (err) {
+        console.error("❌ Error en POST /api/cats:", err.message);
+        return res.status(500).json({ error: err.message });
+      }
+      console.log("✅ POST /api/cats - Gato creado con ID:", result.insertId);
       res.json({ id: result.insertId });
     }
   );
@@ -80,18 +91,34 @@ app.post("/api/cats", upload.single("imageFile"), (req, res) => {
 app.put("/api/cats/:id", (req, res) => {
   const { id } = req.params;
   const { status } = req.body;
+  console.log(`🔄 PUT /api/cats/${id} - Cambiando estado a: ${status}`);
   db.query("UPDATE cats SET status = ? WHERE id = ?", [status, id], (err) => {
-    if (err) return res.status(500).json({ error: err.message });
+    if (err) {
+      console.error(`❌ Error en PUT /api/cats/${id}:`, err.message);
+      return res.status(500).json({ error: err.message });
+    }
     res.json({ message: "Estado actualizado" });
   });
 });
 
 app.delete("/api/cats/:id", (req, res) => {
   const { id } = req.params;
+  console.log(`🗑️ DELETE /api/cats/${id}`);
   db.query("DELETE FROM cats WHERE id = ?", [id], (err) => {
-    if (err) return res.status(500).json({ error: err.message });
+    if (err) {
+      console.error(`❌ Error en DELETE /api/cats/${id}:`, err.message);
+      return res.status(500).json({ error: err.message });
+    }
     res.json({ message: "Gato eliminado" });
   });
+});
+
+// Servir frontend y uploads (DESPUÉS de las rutas API)
+app.use(express.static(path.join(__dirname, "../frontend")));
+app.use("/uploads", express.static(UPLOAD_DIR));
+
+app.get("/", (req, res) => {
+  res.sendFile(path.join(__dirname, "../frontend/home.html"));
 });
 
 // 🚀 Iniciar servidor (Railway asigna el puerto automáticamente)

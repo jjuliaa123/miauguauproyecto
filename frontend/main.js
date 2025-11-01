@@ -1,4 +1,4 @@
-const API_BASE = 'http://localhost:5000';
+const API_BASE = 'https://miauguauproyecto.onrender.com';
 
 const catsListEl = document.getElementById('catsList');
 const qEl = document.getElementById('q');
@@ -13,9 +13,16 @@ function showMessage(text, type = 'ok') {
 async function fetchCats() {
   try {
     const res = await fetch(`${API_BASE}/api/cats`);
+    if (!res.ok) {
+      const error = await res.json().catch(() => ({ error: `Error ${res.status}` }));
+      console.error('Error del servidor:', error);
+      showMessage(`Error del servidor: ${error.error || res.statusText}`, 'error');
+      return [];
+    }
     const data = await res.json();
     return data;
-  } catch {
+  } catch (error) {
+    console.error('Error al conectar:', error);
     showMessage('Error al conectar con el servidor', 'error');
     return [];
   }
@@ -79,24 +86,35 @@ async function deleteCat(id) {
 // Evento del form con subida de archivo
 document.getElementById('catForm').addEventListener('submit', async e => {
   e.preventDefault();
-  const formData = new FormData();
-  formData.append('name', document.getElementById('name').value);
-  formData.append('age', document.getElementById('age').value);
-  formData.append('breed', document.getElementById('breed').value);
-  formData.append('description', document.getElementById('desc').value);
-  formData.append('status', document.getElementById('status').value);
-  
-  const fileInput = document.getElementById('imageFile');
-  if (fileInput.files[0]) formData.append('imageFile', fileInput.files[0]);
+  try {
+    const formData = new FormData();
+    formData.append('name', document.getElementById('name').value);
+    formData.append('age', document.getElementById('age').value);
+    formData.append('breed', document.getElementById('breed').value);
+    formData.append('description', document.getElementById('desc').value);
+    formData.append('status', document.getElementById('status').value);
+    
+    const fileInput = document.getElementById('imageFile');
+    if (fileInput.files[0]) formData.append('imageFile', fileInput.files[0]);
 
-  await fetch(`${API_BASE}/api/cats`, {
-    method: 'POST',
-    body: formData,
-  });
+    const res = await fetch(`${API_BASE}/api/cats`, {
+      method: 'POST',
+      body: formData,
+    });
 
-  e.target.reset();
-  showMessage('Gato publicado ✅');
-  loadAndRender();
+    if (!res.ok) {
+      const error = await res.json().catch(() => ({ error: `Error ${res.status}` }));
+      showMessage(`Error: ${error.error || res.statusText}`, 'error');
+      return;
+    }
+
+    e.target.reset();
+    showMessage('Gato publicado ✅');
+    loadAndRender();
+  } catch (error) {
+    console.error('Error al publicar gato:', error);
+    showMessage('Error al publicar el gato', 'error');
+  }
 });
 
 document.getElementById('refresh').onclick = loadAndRender;
