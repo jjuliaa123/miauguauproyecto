@@ -87,8 +87,7 @@ app.delete("/api/cats/:id", (req, res) => {
   res.json({ message: "Gato eliminado" });
 });
 
-// 🚀 Iniciar servidor (Render usa PORT automáticamente)
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
+app.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 Servidor corriendo en http://localhost:${PORT}`);
 });
