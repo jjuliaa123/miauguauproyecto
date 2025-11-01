@@ -16,41 +16,45 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// 📁 Carpeta de uploads
+// Carpeta de uploads
 const UPLOAD_DIR = path.join(__dirname, "uploads");
 if (!fs.existsSync(UPLOAD_DIR)) fs.mkdirSync(UPLOAD_DIR);
 
-// ⚙️ Multer para subir imágenes
+// Multer para subir imágenes
 const storage = multer.diskStorage({
   destination: (req, file, cb) => cb(null, UPLOAD_DIR),
   filename: (req, file, cb) => cb(null, Date.now() + path.extname(file.originalname)),
 });
 const upload = multer({ storage });
 
-// 🌐 Servir frontend
+// Servir frontend y uploads
 app.use(express.static(path.join(__dirname, "../frontend")));
 app.use("/uploads", express.static(UPLOAD_DIR));
 
-// 🏠 Página de inicio
 app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "../frontend/home.html"));
 });
 
-// 🐱 Conexión MySQL (Railway DB)
-const db = mysql.createConnection({
-  host: process.env.DB_HOST,       // host de Railway
-  user: process.env.DB_USER,       // usuario de Railway
-  password: process.env.DB_PASS,   // contraseña de Railway
-  database: process.env.DB_NAME,   // nombre de tu base
-  port: process.env.DB_PORT || 3306 // puerto de Railway
+// 🐱 Pool de MySQL
+const db = mysql.createPool({
+  host: process.env.DB_HOST,
+  user: process.env.DB_USER,
+  password: process.env.DB_PASS,
+  database: process.env.DB_NAME,
+  waitForConnections: true,
+  connectionLimit: 10,
+  queueLimit: 0
 });
 
-db.connect((err) => {
+db.getConnection((err, connection) => {
   if (err) console.error("❌ Error al conectar a MySQL:", err.message);
-  else console.log("✅ Conectado a MySQL correctamente");
+  else {
+    console.log("✅ Conectado a MySQL correctamente");
+    connection.release();
+  }
 });
 
-// --- 🐾 RUTAS ---
+// --- Rutas ---
 app.get("/api/cats", (req, res) => {
   db.query("SELECT * FROM cats", (err, result) => {
     if (err) return res.status(500).json({ error: err.message });
