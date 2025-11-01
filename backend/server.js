@@ -7,7 +7,6 @@ import path from "path";
 import { fileURLToPath } from "url";
 import fs from "fs";
 
-
 dotenv.config();
 
 const __filename = fileURLToPath(import.meta.url);
@@ -17,28 +16,27 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Carpeta de uploads
+// 📁 Carpeta de uploads (Render borra archivos locales al reiniciar, pero igual la creamos)
 const UPLOAD_DIR = path.join(__dirname, "uploads");
 if (!fs.existsSync(UPLOAD_DIR)) fs.mkdirSync(UPLOAD_DIR);
 
-// Multer para subir archivos
+// ⚙️ Multer para subir imágenes
 const storage = multer.diskStorage({
   destination: (req, file, cb) => cb(null, UPLOAD_DIR),
   filename: (req, file, cb) => cb(null, Date.now() + path.extname(file.originalname)),
 });
 const upload = multer({ storage });
 
-// Servir frontend y uploads
+// 🌐 Servir frontend
+app.use(express.static(path.join(__dirname, "../frontend")));
+app.use("/uploads", express.static(UPLOAD_DIR));
 
-// Página de inicio
+// 🏠 Página de inicio
 app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "../frontend/home.html"));
 });
 
-app.use(express.static(path.join(__dirname, "../frontend")));
-app.use("/uploads", express.static(UPLOAD_DIR));
-
-// Conexión MySQL
+// 🐱 Conexión MySQL (Render usa variables de entorno si querés conectar una DB externa)
 const db = mysql.createConnection({
   host: process.env.DB_HOST || "localhost",
   user: process.env.DB_USER || "root",
@@ -47,11 +45,11 @@ const db = mysql.createConnection({
 });
 
 db.connect((err) => {
-  if (err) console.error("Error al conectar a MySQL:", err.message);
+  if (err) console.error("❌ Error al conectar a MySQL:", err.message);
   else console.log("✅ Conectado a MySQL correctamente");
 });
 
-// --- Rutas ---
+// --- 🐾 RUTAS ---
 app.get("/api/cats", (req, res) => {
   db.query("SELECT * FROM cats", (err, result) => {
     if (err) return res.status(500).json({ error: err.message });
@@ -59,7 +57,6 @@ app.get("/api/cats", (req, res) => {
   });
 });
 
-// Subir gato con imagen
 app.post("/api/cats", upload.single("imageFile"), (req, res) => {
   const { name, age, breed, description, status } = req.body;
   const image = req.file ? `/uploads/${req.file.filename}` : "";
@@ -91,6 +88,8 @@ app.delete("/api/cats/:id", (req, res) => {
   });
 });
 
-app.listen(process.env.PORT || 5000, () => {
-  console.log(`Servidor corriendo en http://localhost:${process.env.PORT || 5000}`);
+// 🚀 Iniciar servidor (Render provee su propio puerto)
+const PORT = process.env.PORT || 5000;
+app.listen(PORT, () => {
+  console.log(`🚀 Servidor corriendo en http://localhost:${PORT}`);
 });
