@@ -31,7 +31,7 @@ app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "../frontend/home.html"));
 });
 
-// 🐱 Datos simulados en memoria
+
 let cats = [
   {
     id: 1,
