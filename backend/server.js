@@ -16,7 +16,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// 📁 Carpeta de uploads (Render borra archivos locales al reiniciar, pero igual la creamos)
+// 📁 Carpeta de uploads
 const UPLOAD_DIR = path.join(__dirname, "uploads");
 if (!fs.existsSync(UPLOAD_DIR)) fs.mkdirSync(UPLOAD_DIR);
 
@@ -36,12 +36,13 @@ app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "../frontend/home.html"));
 });
 
-// 🐱 Conexión MySQL (Render usa variables de entorno si querés conectar una DB externa)
+// 🐱 Conexión MySQL (Railway DB)
 const db = mysql.createConnection({
-  host: process.env.DB_HOST || "localhost",
-  user: process.env.DB_USER || "root",
-  password: process.env.DB_PASS || "",
-  database: process.env.DB_NAME || "miauguau",
+  host: process.env.DB_HOST,       // host de Railway
+  user: process.env.DB_USER,       // usuario de Railway
+  password: process.env.DB_PASS,   // contraseña de Railway
+  database: process.env.DB_NAME,   // nombre de tu base
+  port: process.env.DB_PORT || 3306 // puerto de Railway
 });
 
 db.connect((err) => {
@@ -88,7 +89,7 @@ app.delete("/api/cats/:id", (req, res) => {
   });
 });
 
-// 🚀 Iniciar servidor (Render provee su propio puerto)
+// 🚀 Iniciar servidor
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`🚀 Servidor corriendo en http://localhost:${PORT}`);
